@@ -1,0 +1,43 @@
+{
+  "name": "user-management-system",
+  "version": "1.0.0",
+  "description": "User management system with Node.js and MySQL",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "start:dev": "nodemon backend/server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jarombustillo/user-management-system.git"
+  },
+  "keywords": [
+    "node",
+    "mysql",
+    "jwt",
+    "authentication"
+  ],
+  "author": "Your Name",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jarombustillo/user-management-system/issues"
+  },
+  "homepage": "https://github.com/jarombustillo/user-management-system#readme",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "joi": "^17.11.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.6.5",
+    "nodemailer": "^6.9.8",
+    "sequelize": "^6.35.1",
+    "swagger-ui-express": "^5.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
