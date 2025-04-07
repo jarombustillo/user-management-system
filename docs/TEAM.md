@@ -6,12 +6,12 @@
 
 ### Branches:
 - `leader/repo-setup` – Initial repository structure, `.gitignore`, `README.md`, and boilerplate setup.
-- `leader/integration-review` – Reviews pull requests, resolves conflicts, and merges features into `main`.
+- `main` – Reviews pull requests, resolves conflicts, and merges features.
 - `leader/final-docs` – Final testing reports, documentation polishing, and project cleanup.
 
 ---
 
-## Member 1 – Backend Developer (Auth & Email) - Jarom Bustillo
+## Member 1 – Backend Developer (Auth & Email) - John Rey Ancero
 
 ### Branch:
 - `backend/signup-auth`
@@ -23,7 +23,7 @@
 
 ---
 
-## Member 2 – Backend Developer (Roles, Reset, CRUD) - John Rey Ancero
+## Member 2 – Backend Developer (Roles, Reset, CRUD) - Jarom Bustillo
 
 ### Branch:
 - `backend/roles-crud`
@@ -39,7 +39,7 @@
 ##  Member 3 – Frontend Developer (Email Sign-Up, Verification, and Authentication) - Client Daguplo
 
 ### Branch:
-- `frontend-signup-auth`
+- `FrontEnd-Daguplo`
 
 ### Responsibilities:
 - Build sign-up/login/verification UI
