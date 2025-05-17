@@ -1,12 +1,11 @@
 {
   "name": "user-management-system",
   "version": "1.0.0",
-  "description": "User management system with Node.js and MySQL",
+  "description": "NodeJS and MYSQL API for Email Sign Up with Verification, Authentication & Forgot Password",
   "main": "backend/server.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "start:dev": "nodemon backend/server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node ./server.js",
+    "start:dev": "nodemon ./server.js"
   },
   "repository": {
     "type": "git",
@@ -30,12 +29,13 @@
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "joi": "^17.11.0",
+    "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",
-    "mysql2": "^3.6.5",
+    "mysql2": "^3.14.0",
     "nodemailer": "^6.9.8",
+    "reflect-metadata": "^0.2.2",
     "sequelize": "^6.35.1",
-    "swagger-ui-express": "^5.0.0"
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"
