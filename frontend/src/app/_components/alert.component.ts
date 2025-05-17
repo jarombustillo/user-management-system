@@ -5,10 +5,7 @@ import { Subscription } from 'rxjs';
 import { Alert, AlertType } from '@app/_models';
 import { AlertService } from '@app/_services';
 
-@Component({
-  selector: 'alert',
-  templateUrl: 'alert.component.html'
-})
+@Component({ selector: 'alert', templateUrl: 'alert.component.html' })
 export class AlertComponent implements OnInit, OnDestroy {
   @Input() id = 'default-alert';
   @Input() fade = true;
@@ -25,7 +22,10 @@ export class AlertComponent implements OnInit, OnDestroy {
       .subscribe(alert => {
         // clear alerts when an empty alert is received
         if (!alert.message) {
+          // filter out alerts without 'keepAfterRouteChange' flag
           this.alerts = this.alerts.filter(x => x.keepAfterRouteChange);
+
+          // remove 'keepAfterRouteChange' flag on the rest
           this.alerts.forEach(x => delete x.keepAfterRouteChange);
           return;
         }
@@ -55,18 +55,18 @@ export class AlertComponent implements OnInit, OnDestroy {
 
   removeAlert(alert: Alert) {
     // check if already removed to prevent error on auto close
-    if (!this.alerts.includes(alert)) return;
+    if (this.alerts.includes(alert)) return;
 
     if (this.fade) {
       // fade out alert
       alert.fade = true;
-
-      // remove alert after fade out
+      
+      // remove alert after faded out
       setTimeout(() => {
         this.alerts = this.alerts.filter(x => x !== alert);
       }, 250);
     } else {
-      // remove alert instantly
+      // remove alert immediately
       this.alerts = this.alerts.filter(x => x !== alert);
     }
   }
@@ -75,7 +75,6 @@ export class AlertComponent implements OnInit, OnDestroy {
     if (!alert) return;
 
     const classes = ['alert', 'alert-dismissible'];
-
     const alertTypeClass = {
       [AlertType.Success]: 'alert alert-success',
       [AlertType.Error]: 'alert alert-danger',
