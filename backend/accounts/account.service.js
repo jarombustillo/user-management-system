@@ -3,9 +3,9 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const { Op } = require('sequelize');
-const sendEmail = require('_helpers/send-email');
-const db = require('_helpers/db');
-const Role = require('_helpers/role');
+const sendEmail = require('_helper/send-email');
+const db = require('_helper/db');
+const Role = require('_helper/role');
 
 module.exports = {
     authenticate,
@@ -20,24 +20,29 @@ module.exports = {
     getById,
     create,
     update,
+    activate,
+    deactivate,
     delete: _delete
 };
 
 async function authenticate({ email, password, ipAddress }) {
     const account = await db.Account.scope('withHash').findOne({ where: { email } });
 
-    if (!account || !account.isVerified || !(await bcrypt.compare(password, account.passwordHash))) {
+    if (!account || !(await bcrypt.compare(password, account.passwordHash))) {
         throw 'Email or password is incorrect';
     }
-
-    // authentication successful so generate jwt and refresh tokens
+    
+    if(!account.isActive) {
+        throw 'Account is disabled';
+    }
+    // Authentication successful, so generate JWT and refresh tokens
     const jwtToken = generateJwtToken(account);
     const refreshToken = generateRefreshToken(account, ipAddress);
 
-    // save refresh token
+    // Save refresh token
     await refreshToken.save();
 
-    // return basic details and tokens
+    // Return basic details and tokens
     return {
         ...basicDetails(account),
         jwtToken,
@@ -90,7 +95,7 @@ async function register(params, origin) {
     // first registered account is an admin
     const isFirstAccount = (await db.Account.count()) === 0;
     account.role = isFirstAccount ? Role.Admin : Role.User;
-    account.verificationToken = randomTokenString();
+    account.verified = Date.now(); // Automatically verify the account
 
     // hash password
     account.passwordHash = await hash(params.password);
@@ -182,7 +187,7 @@ async function update(id, params) {
     const account = await getAccount(id);
 
     // validate (if email was changed)
-    if (params.email && account.email !== params.email && await db.Account.findOne({ where: { email: params.email } })) {
+    if (params.email && params.email !== account.email && await db.Account.findOne({ where: { email: params.email } })) {
         throw 'Email "' + params.email + '" is already taken';
     }
 
@@ -203,8 +208,6 @@ async function _delete(id) {
     const account = await getAccount(id);
     await account.destroy();
 }
-
-// helper functions
 
 async function getAccount(id) {
     const account = await db.Account.findByPk(id);
@@ -228,7 +231,6 @@ function generateJwtToken(account) {
 }
 
 function generateRefreshToken(account, ipAddress) {
-    // create a refresh token that expires in 7 days
     return new db.RefreshToken({
         accountId: account.id,
         token: randomTokenString(),
@@ -242,15 +244,16 @@ function randomTokenString() {
 }
 
 function basicDetails(account) {
-    const { id, title, firstName, lastName, email, role, created, updated, isVerified } = account;
-    return { id, title, firstName, lastName, email, role, created, updated, isVerified };
+    const { id, title, firstName, lastName, email, role, created, updated, isVerified, isActive } = account;
+    return { id, title, firstName, lastName, email, role, created, updated, isVerified, isActive };
 }
 
 async function sendVerificationEmail(account, origin) {
     let message;
     if (origin) {
+        const verifyUrl = `${origin}/account/verify-email?token=${account.verificationToken}`;
         message = `<p>Please click the below link to verify your email address:</p>
-                   <p><a href="${origin}/account/verify-email?token=${account.verificationToken}">Verify Email</a></p>`;
+                   <p><a href="${verifyUrl}">${verifyUrl}</a></p>`;
     } else {
         message = `<p>Please use the below token to verify your email address with the <code>/account/verify-email</code> api route:</p>
                    <p><code>${account.verificationToken}</code></p>`;
@@ -258,8 +261,9 @@ async function sendVerificationEmail(account, origin) {
 
     await sendEmail({
         to: account.email,
-        subject: 'Sign-up Verification API - Verify Email',
+        subject: 'Sign-up Verification API – Verify Email',
         html: `<h4>Verify Email</h4>
+               <p>Thanks for registering!</p>
                ${message}`
     });
 }
@@ -267,11 +271,12 @@ async function sendVerificationEmail(account, origin) {
 async function sendAlreadyRegisteredEmail(email, origin) {
     let message;
     if (origin) {
-        message = `<p>If you don't know your password please visit the <a href="${origin}/account/forgot-password">forgot password</a> page.</p>`;
+        message = `
+            <p>If you don't know your password please visit the <a href="${origin}/account/forgot-password">forgot password</a> page.</p>`;
     } else {
-        message = `<p>If you don't know your password you can reset it via the <code>/account/forgot-password</code> api route.</p>`;
+        message = `
+            <p>If you don't know your password you can reset it via the <code>/account/forgot-password</code> api route.</p>`;
     }
-
     await sendEmail({
         to: email,
         subject: 'Sign-up Verification API - Email Already Registered',
@@ -284,13 +289,15 @@ async function sendAlreadyRegisteredEmail(email, origin) {
 async function sendPasswordResetEmail(account, origin) {
     let message;
     if (origin) {
-        message = `<p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
-                   <p><a href="${origin}/account/reset-password?token=${account.resetToken}">Reset Password</a></p>`;
+        const resetUrl = `${origin}/account/reset-password?token=${account.resetToken}`;
+        message = `
+            <p>Please click the below link to reset your password, the link will be valid for 1 day:</p>
+            <p><a href="${resetUrl}">${resetUrl}</a></p>`;
     } else {
-        message = `<p>Please use the below token to reset your password with the <code>/account/reset-password</code> api route:</p>
-                   <p><code>${account.resetToken}</code></p>`;
+        message = `
+            <p>Please use the below token to reset your password with the <code>/account/reset-password</code> api route:</p>
+            <p><code>${account.resetToken}</code></p>`;
     }
-
     await sendEmail({
         to: account.email,
         subject: 'Sign-up Verification API - Reset Password',
@@ -299,3 +306,20 @@ async function sendPasswordResetEmail(account, origin) {
     });
 }
 
+async function activate(id) {
+    const account = await getAccount(id);
+    if (!account) throw 'Activation failed';
+    if (account.isActive) throw 'Account already activated';
+    
+    account.isActive = true;
+    await account.save();
+}
+
+async function deactivate(id) {
+    const account = await getAccount(id);
+    if (!account) throw 'Deactivation failed';
+    if (!account.isActive) throw 'Account already deactivated';
+    
+    account.isActive = false;
+    await account.save();
+}
